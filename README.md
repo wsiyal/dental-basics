@@ -21,6 +21,10 @@ Every figure and photograph is inlined as base64, so `index.html` works on its
 own: email it, drop it on a USB stick, or open it offline. No build step, no
 dependencies, no network calls.
 
+`assets/images/` holds the same diagrams as separate files. The page does not
+load them — it already carries its own copies — they are there so a single
+figure can be reused without digging it out of the HTML.
+
 ## Features
 
 - Collapsible sections with expand/collapse-all, remembered between visits
