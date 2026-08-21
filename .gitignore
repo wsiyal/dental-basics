@@ -1,0 +1,13 @@
+# Nothing here is generated at publish time — index.html is committed as-is.
+# Keep local scratch and OS noise out of the repo.
+
+Thumbs.db
+desktop.ini
+.DS_Store
+*.tmp
+*.bak
+
+# Never publish the source manual or working material
+*.pdf
+*.docx
+*.pptx
