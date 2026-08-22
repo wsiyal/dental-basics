@@ -1411,6 +1411,16 @@ body.focus-mode main{padding-top:26px;}
   --lg-spec-base:.16;      /* measured ceiling .195 */
   --lg-spec:calc(var(--not-rt) * var(--not-hc) * var(--not-rm) * var(--lg-spec-base));
   --lg-border:calc(1px + var(--a11y-hc) * 1px);
+
+  /* Content glass. Lighter than the navigation scrim because the backdrop is
+     known, and driven by the same accessibility flags. */
+  --lg-cont-base:.74;
+  --lg-cont-hc:.90;
+  --lg-cont:calc(
+      var(--a11y-rt) * 1
+    + var(--not-rt) * ( var(--a11y-hc) * var(--lg-cont-hc)
+                      + var(--not-hc)  * var(--lg-cont-base) ));
+  --lg-cont-blur:calc(var(--not-rt) * 18px);
   --lg-shadow:0 10px 34px rgba(10,26,32,.16), 0 2px 6px rgba(10,26,32,.08);
 
   /* A static ambient field. Glass over flat grey reads as nothing — the
@@ -1430,8 +1440,12 @@ body.focus-mode main{padding-top:26px;}
     --lg-rim-base:.30;
     --lg-rim:calc(var(--not-rt) * var(--lg-rim-base));
       --lg-rim:calc(var(--not-rt) * var(--lg-rim-base));
-  --lg-spec-base:.11;   /* measured ceiling .115 with the ink below */
-    --lg-spec-base:.11;   /* measured ceiling .115 with the ink below */
+  --lg-spec-base:.11;
+  --lg-cont-base:.66;
+  --lg-cont-hc:.86;   /* measured ceiling .115 with the ink below */
+    --lg-spec-base:.11;
+    --lg-cont-base:.66;
+    --lg-cont-hc:.86;   /* measured ceiling .115 with the ink below */
     --lg-shadow:0 14px 40px rgba(0,0,0,.66), 0 2px 8px rgba(0,0,0,.5);
     --lg-aurora-1:rgba(22,206,226,calc(var(--not-rt) * var(--not-hc) * .34));
     --lg-aurora-2:rgba(92,124,255,calc(var(--not-rt) * var(--not-hc) * .30));
@@ -1566,6 +1580,125 @@ html.lg-lens [data-skin="apple"] .masthead-status::after{
   box-shadow:inset 0 1px 0 rgba(var(--lg-hi),var(--lg-rim));
 }
 [data-skin="apple"] nav.toc{ border-right:.5px solid rgba(var(--lg-hi),.14); }
+
+/* ── Content glass ──
+   Every reading surface takes the material, so the appearance is glass from
+   the top bar to the last answer card rather than a glass frame around opaque
+   content. Cards still sit on top of the ambient field, never on other glass:
+   the page background is the only thing behind them. */
+[data-skin="apple"] .card,
+[data-skin="apple"] details.q,
+[data-skin="apple"] .script,
+[data-skin="apple"] .layman,
+[data-skin="apple"] .atlas-diagram,
+[data-skin="apple"] .tabset,
+[data-skin="apple"] .quick-map,
+[data-skin="apple"] .fdi-mastery,
+[data-skin="apple"] .tw,
+[data-skin="apple"] .plate,
+[data-skin="apple"] .memory-hook,
+[data-skin="apple"] .block.is-closed .block-head,
+[data-skin="apple"] .formula-atlas,
+[data-skin="apple"] .quick-map-grid span{
+  background:rgba(var(--lg-scrim), var(--lg-cont));
+  -webkit-backdrop-filter:blur(var(--lg-cont-blur)) saturate(150%);
+  backdrop-filter:blur(var(--lg-cont-blur)) saturate(150%);
+  border:1px solid rgba(var(--lg-hi),.20);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--lg-hi),calc(var(--lg-rim) * .7)),
+    var(--lg-shadow);
+}
+/* Table rows must not each become their own pane of glass — the header band
+   and the striping sit *inside* one card, so they stay as tints. */
+[data-skin="apple"] .tw table{background:transparent;}
+[data-skin="apple"] .tw th{background:rgba(var(--lg-hi),.14);}
+[data-skin="apple"] .tw tbody tr:nth-child(even){background:rgba(var(--lg-hi),.07);}
+[data-skin="apple"] details.q .opts span,
+[data-skin="apple"] details.q .ans{background:rgba(var(--lg-hi),.12);}
+/* A plate frames a photograph; glass behind an image is wasted work, and the
+   white mat is what makes a clinical picture readable. */
+[data-skin="apple"] .plate .poster-frame{background:rgba(255,255,255,.86);}
+
+@media (prefers-reduced-transparency:reduce){
+  [data-skin="apple"] .card,
+  [data-skin="apple"] details.q,
+  [data-skin="apple"] .script,
+  [data-skin="apple"] .layman,
+  [data-skin="apple"] .atlas-diagram,
+  [data-skin="apple"] .tabset,
+  [data-skin="apple"] .quick-map,
+  [data-skin="apple"] .fdi-mastery,
+  [data-skin="apple"] .tw,
+  [data-skin="apple"] .plate,
+  [data-skin="apple"] .memory-hook,
+  [data-skin="apple"] .block.is-closed .block-head{
+    -webkit-backdrop-filter:none; backdrop-filter:none;
+    background:var(--surface); border-color:var(--line);
+  }
+}
+:root[data-force~="rt"][data-skin="apple"] .card,
+:root[data-force~="rt"][data-skin="apple"] details.q,
+:root[data-force~="rt"][data-skin="apple"] .script,
+:root[data-force~="rt"][data-skin="apple"] .layman,
+:root[data-force~="rt"][data-skin="apple"] .atlas-diagram,
+:root[data-force~="rt"][data-skin="apple"] .tabset,
+:root[data-force~="rt"][data-skin="apple"] .quick-map,
+:root[data-force~="rt"][data-skin="apple"] .fdi-mastery,
+:root[data-force~="rt"][data-skin="apple"] .tw,
+:root[data-force~="rt"][data-skin="apple"] .plate,
+:root[data-force~="rt"][data-skin="apple"] .memory-hook,
+:root[data-force~="rt"][data-skin="apple"] .block.is-closed .block-head{
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+  background:var(--surface); border-color:var(--line);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  [data-skin="apple"] .card,
+  [data-skin="apple"] details.q,
+  [data-skin="apple"] .script,
+  [data-skin="apple"] .layman,
+  [data-skin="apple"] .atlas-diagram,
+  [data-skin="apple"] .tabset,
+  [data-skin="apple"] .quick-map,
+  [data-skin="apple"] .fdi-mastery,
+  [data-skin="apple"] .tw,
+  [data-skin="apple"] .plate{ background:var(--surface); }
+}
+
+/* ── Secondary text on content glass ──
+   The same rule the navigation chrome already follows, now that content is
+   glass too: a muted grey that clears 4.5:1 on an opaque card stops clearing
+   it once the card's luminance depends on the field behind it. Rather than
+   flatten the hierarchy to full ink everywhere, secondary text gets its own
+   darker/lighter token that is measured against the content scrim. */
+:root[data-skin="apple"]{ --on-glass-2:#39424E; --on-glass-3:#4A5563; }
+:root[data-skin="apple"][data-theme="dark"]{ --on-glass-2:#C9D3DF; --on-glass-3:#B3BDC9; }
+@media (prefers-color-scheme:dark){
+  :root[data-skin="apple"]:not([data-theme="light"]){ --on-glass-2:#C9D3DF; --on-glass-3:#B3BDC9; }
+}
+[data-skin="apple"] .card p,
+[data-skin="apple"] .script p,
+[data-skin="apple"] .layman p,
+[data-skin="apple"] .atlas-diagram figcaption,
+[data-skin="apple"] .plate-cap,
+[data-skin="apple"] .tw td,
+[data-skin="apple"] .muted,
+[data-skin="apple"] .gallery-note,
+[data-skin="apple"] .recall-hint{ color:var(--on-glass-2); }
+[data-skin="apple"] .diagram-label,
+[data-skin="apple"] .tabset-label,
+[data-skin="apple"] .script .label,
+[data-skin="apple"] .layman .label,
+[data-skin="apple"] .tw th,
+[data-skin="apple"] .qcount,
+[data-skin="apple"] .memory-hook span{ color:var(--on-glass-3); }
+
+/* Text that floats directly on the ambient field, with no card behind it, is
+   measured against the field rather than against content glass — the field is
+   the darker of the two, so it takes full ink and lets size carry hierarchy. */
+[data-skin="apple"] .h-sub,
+[data-skin="apple"] .masthead .lede,
+[data-skin="apple"] .whoami,
+[data-skin="apple"] .part .pdesc{ color:var(--ink); }
 
 /* ── Text on glass ──
    Hierarchy moves to size and weight; colour stays at full ink. A muted
@@ -4756,6 +4889,23 @@ nav.toc{padding-left:max(14px,env(safe-area-inset-left));}
   function fdiPosition(p) { return POSITIONS[p]; }
   function fdiQuadrant(q) { return QUADRANTS[q]; }
   function fdiNear(p) { return p === 8 ? 7 : p + 1; }
+  /* Tooth type by position digit: 1-2 incisor, 3 canine, 4-5 premolar, 6-8 molar. */
+  function fdiType(p) { return p <= 2 ? 'incisor' : p === 3 ? 'canine' : p <= 5 ? 'premolar' : 'molar'; }
+  /* The nearest position that is a DIFFERENT tooth type.
+
+     The odd-one-out item used to reach for fdiNear, but an adjacent position is
+     usually the same type — 1 and 2 are both incisors, 6 and 7 both molars — so
+     for positions 1, 4, 6, 7 and 8 every option came out the same type and the
+     question had no correct answer at all. Searching outward by type fixes that
+     for all eight positions. */
+  function fdiOtherType(p) {
+    var type = fdiType(p);
+    for (var d = 1; d <= 7; d++) {
+      if (p - d >= 1 && fdiType(p - d) !== type) return p - d;
+      if (p + d <= 8 && fdiType(p + d) !== type) return p + d;
+    }
+    return p;
+  }
   function fdiMirror(q) { return { 1: 2, 2: 1, 3: 4, 4: 3 }[q]; }
   function fdiVertical(q) { return { 1: 4, 2: 3, 3: 2, 4: 1 }[q]; }
   function rotate(items, seed) { var n = seed % items.length; return items.slice(n).concat(items.slice(0, n)); }
@@ -4903,12 +5053,18 @@ nav.toc{padding-left:max(14px,env(safe-area-inset-left));}
         { text: '1' + position + ' and 3' + position, error: 'mixed-quadrant', note: 'This mixes one upper tooth with one lower tooth.' }
       ], { id: 'fdi-upper-pair-' + position, skill: 'pair', position: position }, count++));
 
-      discrimination.appendChild(fdiItem('Which tooth identifies a different tooth type from the other three?', '4' + adjacent, [
-        { text: '1' + position, error: 'same-type', note: 'Its second digit matches two other options.' },
-        { text: '2' + position, error: 'same-type', note: 'Its second digit matches two other options.' },
-        { text: '3' + position, error: 'same-type', note: 'Its second digit matches two other options.' },
-        { text: '4' + adjacent, correct: true, note: 'Correct: its second digit names a different tooth position.' }
-      ], { id: 'fdi-odd-type-' + position, skill: 'odd-type', position: adjacent }, count++));
+      var otherType = fdiOtherType(position);
+      var sharedType = fdiType(position), oddType = fdiType(otherType);
+      var sameNote = 'Second digit ' + position + ' \u2014 a ' + sharedType +
+                     ', the same type as two other options.';
+      discrimination.appendChild(fdiItem('Which tooth identifies a different tooth type from the other three?', '4' + otherType, [
+        { text: '1' + position, error: 'same-type', note: sameNote },
+        { text: '2' + position, error: 'same-type', note: sameNote },
+        { text: '3' + position, error: 'same-type', note: sameNote },
+        { text: '4' + otherType, correct: true,
+          note: 'Correct: second digit ' + otherType + ' is a ' + oddType +
+                ', while the other three are ' + sharedType + 's.' }
+      ], { id: 'fdi-odd-type-' + position, skill: 'odd-type', position: otherType }, count++));
     });
 
     var fullCodes = [];
