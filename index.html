@@ -39,7 +39,7 @@
   --surface-3:#E8E4DD;
   --ink:#152430;
   --muted:#54646F;
-  --faint:#83929E;
+  --faint:#5F6C7A;
   --line:#E2DED7;
   --line-soft:#EFECE6;
 
@@ -83,7 +83,7 @@
     --surface-3:#22313C;
     --ink:#E9F0F3;
     --muted:#A7B7C1;
-    --faint:#7C8D99;
+    --faint:#9DAEBB;
     --line:#26343E;
     --line-soft:#1E2A33;
 
@@ -116,7 +116,7 @@
   --surface-3:#22313C;
   --ink:#E9F0F3;
   --muted:#A7B7C1;
-  --faint:#7C8D99;
+  --faint:#9DAEBB;
   --line:#26343E;
   --line-soft:#1E2A33;
 
@@ -621,9 +621,17 @@ ul.plain li,ol.plain li{margin-bottom:6px;}
   transition:color .18s ease,background .18s ease,box-shadow .18s ease;
 }
 .tablist button:hover{color:var(--ink);background:color-mix(in srgb,var(--surface) 70%,transparent);}
+/* Four signals on the active tab, not one: fill, weight, an inner top
+   highlight and a ring. Colour alone fails for anyone who cannot separate
+   these hues, and fails again the moment the surface behind it changes. */
 .tablist button[aria-selected="true"]{
-  color:var(--teal-ink);background:var(--surface);
-  box-shadow:var(--sh-1);
+  color:var(--teal-ink);
+  background:var(--surface);
+  font-weight:720;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    0 1px 2px rgba(0,0,0,.10),
+    0 0 0 1px color-mix(in srgb,var(--teal) 34%,transparent);
 }
 .tablist button:focus-visible{outline:2px solid var(--ring);outline-offset:-2px;}
 .tabpanels{padding:4px 18px 18px;}
@@ -1300,7 +1308,10 @@ body.focus-mode main{padding-top:26px;}
 [data-skin="apple"] .poster-frame{border:.5px solid var(--line);border-radius:var(--r-sm);}
 
 /* ── Tables as grouped lists ───────────────────────────────────────── */
-[data-skin="apple"] .tw{border:none;border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden;}
+/* overflow-x must stay auto: a bare overflow:hidden here was clipping
+   165px off the wide comparison tables with no way to scroll to it. */
+[data-skin="apple"] .tw{border:none;border-radius:var(--r-md);box-shadow:var(--sh-1);
+  overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;}
 [data-skin="apple"] .tw th{
   background:var(--surface-2);border-bottom:.5px solid var(--line);
   font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--faint);
@@ -1586,12 +1597,15 @@ html.lg-lens [data-skin="apple"] .masthead-status::after{
    the top bar to the last answer card rather than a glass frame around opaque
    content. Cards still sit on top of the ambient field, never on other glass:
    the page background is the only thing behind them. */
+/* Level 1 — content surfaces. Tint, edge and inner highlight, but no blur of
+   their own: they sit on the ambient field and the blurred navigation layer,
+   and 500 individually-blurred question cards cost far more than they add.
+   This is the "one blurred parent, lightweight children" rule. */
 [data-skin="apple"] .card,
 [data-skin="apple"] details.q,
 [data-skin="apple"] .script,
 [data-skin="apple"] .layman,
 [data-skin="apple"] .atlas-diagram,
-[data-skin="apple"] .tabset,
 [data-skin="apple"] .quick-map,
 [data-skin="apple"] .fdi-mastery,
 [data-skin="apple"] .tw,
@@ -1600,6 +1614,16 @@ html.lg-lens [data-skin="apple"] .masthead-status::after{
 [data-skin="apple"] .block.is-closed .block-head,
 [data-skin="apple"] .formula-atlas,
 [data-skin="apple"] .quick-map-grid span{
+  background:rgba(var(--lg-scrim), var(--lg-cont));
+  border:1px solid rgba(var(--lg-hi),.20);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--lg-hi),calc(var(--lg-rim) * .7)),
+    var(--lg-shadow);
+}
+/* Level 2 — the one content-area component that keeps real blur, because a
+   segmented control reads as a floating control rather than a page surface
+   and there are only four of them in the whole document. */
+[data-skin="apple"] .tabset{
   background:rgba(var(--lg-scrim), var(--lg-cont));
   -webkit-backdrop-filter:blur(var(--lg-cont-blur)) saturate(150%);
   backdrop-filter:blur(var(--lg-cont-blur)) saturate(150%);
@@ -1859,6 +1883,71 @@ html.lg-lens [data-skin="apple"] .masthead-status::after{
   box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04);
 }
 
+/* ═══════════════ SEMANTIC TOKENS ═══════════════
+   One vocabulary for every component to style against. These are the names
+   components use; the palette tokens above are the values they resolve to.
+   The point is that a component never writes a literal colour or a raw
+   rgba(255,255,255,.1) — which is what made the old theme switching leak
+   dark-mode values into light mode. */
+:root{
+  --page-bg:var(--ground);
+  --page-bg-secondary:var(--surface-2);
+
+  --surface-0:var(--ground);
+  --surface-1:var(--surface);
+  --surface-2-token:var(--surface-2);
+
+  --text-primary:var(--ink);
+  --text-secondary:var(--muted);
+  --text-tertiary:var(--faint);
+  --text-inverse:var(--on-accent);
+
+  --accent-token:var(--teal);
+  --accent-hover:var(--teal-ink);
+  --accent-soft:var(--teal-soft);
+
+  --success:var(--good);
+  --warning:var(--amber);
+  --danger:var(--warn);
+  --info:var(--slate);
+
+  --divider:var(--line);
+  --focus-ring:var(--ring);
+
+  --blur-sm:10px; --blur-md:18px; --blur-lg:26px; --blur-xl:34px;
+
+  --radius-sm:10px; --radius-md:14px; --radius-lg:18px;
+  --radius-xl:26px; --radius-2xl:34px;
+
+  --motion-fast:140ms; --motion-normal:220ms; --motion-slow:340ms;
+  --ease-glass:cubic-bezier(.2,.8,.2,1);
+
+  /* Spacing scale — used by the new rhythm rules below. */
+  --sp-1:4px;  --sp-2:8px;  --sp-3:12px; --sp-4:16px; --sp-5:20px;
+  --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px;
+  --sp-16:64px; --sp-20:80px; --sp-24:96px; --sp-32:128px;
+}
+/* Glass material, named semantically. Resolves to the measured scrim so the
+   contrast floor still governs. */
+[data-skin="apple"]{
+  --glass-bg:rgba(var(--lg-scrim), var(--lg-alpha));
+  --glass-bg-hover:rgba(var(--lg-scrim), calc(var(--lg-alpha) + .06));
+  --glass-bg-active:rgba(var(--lg-scrim), calc(var(--lg-alpha) + .12));
+  --glass-border:rgba(var(--lg-hi),.22);
+  --glass-border-highlight:rgba(var(--lg-hi),var(--lg-rim));
+  --glass-inner-highlight:rgba(var(--lg-hi),calc(var(--lg-rim) * .7));
+  --glass-shadow:var(--lg-shadow);
+}
+
+/* ═══════════════ FOCUS SYSTEM ═══════════════
+   One ring for every keyboard-interactive control, thick enough to survive a
+   glass surface, and never removed for mouse users only. */
+:where(a,button,summary,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid var(--focus-ring);
+  outline-offset:2px;
+  border-radius:var(--radius-sm);
+}
+
 /* ═══════════════ CONTENTS: PART COLOURS ═══════════════
    Each part of the guide carries its own hue, and the contents list, the
    masthead tabs and the section headers all draw from the same six tokens.
@@ -1918,8 +2007,10 @@ nav.toc{padding-top:14px;}
 }
 .toc-group-toggle:hover .toc-caret{background:var(--pc);color:#fff;}
 .toc-count{
-  background:color-mix(in srgb,var(--pc) 18%,transparent);
-  color:var(--pc);font-size:10px;padding:3px 8px;
+  /* The tinted pill carries the part colour; the digits take full ink. The
+     hue on its own tint measured 4.26:1, and a count is small text. */
+  background:color-mix(in srgb,var(--pc) 22%,transparent);
+  color:var(--text-primary);font-size:10px;font-weight:800;padding:3px 8px;
 }
 .toc-list{padding:0 8px 8px;}
 nav.toc a{
@@ -1983,6 +2074,13 @@ nav.toc a.on::before{opacity:1;background:var(--pc-on);transform:translateY(-50%
   :root{--nav-w:268px;}
 }
 @media (max-width:1024px){
+  /* Four named modes are wider than the three-way control they replaced, and
+     the bar only wrapped below 720px — so between 720 and 1024 the switch
+     pushed the page 50px wide. Wrap from the tablet breakpoint down. */
+  .topbar-inner{flex-wrap:wrap;row-gap:8px;}
+  .topbar .spacer{flex:1 1 auto;}
+  .skin-switch{flex:0 0 auto;}
+
   .shell{grid-template-columns:minmax(0,1fr);}
   /* Below this width the sidebar becomes an off-canvas drawer. Left inline it
      would push ~60 links between the masthead and the first line of content. */
@@ -2021,7 +2119,7 @@ nav.toc a.on::before{opacity:1;background:var(--pc-on);transform:translateY(-50%
   .topbar-inner{flex-wrap:wrap;padding:8px 14px;row-gap:8px;column-gap:8px;}
   .topbar .spacer{flex:1 1 auto;}
   .brand{order:0;} .contents-toggle{order:1;} .topbar .spacer{order:2;}
-  .scorebox{order:3;} #themeToggle{order:4;} .command-group{order:5;}
+  .scorebox{order:3;} .skin-switch{order:4;} .command-group{order:5;}
   .scorebox{padding:6px 11px;column-gap:8px;}
   .scorebox .score-label{font-size:8.5px;letter-spacing:.09em;}
   .scorebox .score-value{font-size:16px;min-width:2.6em;}
@@ -2194,9 +2292,6 @@ nav.toc{padding-left:max(14px,env(safe-area-inset-left));}
       <button class="btn" id="hideAll" type="button">Hide all</button>
       <button class="btn" id="resetScore" type="button">Reset</button>
     </div>
-    <button class="btn icon" id="themeToggle" type="button" aria-label="Switch to dark theme" title="Switch theme">
-      <svg id="themeIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M6.5 6.5 4.9 4.9M19.1 19.1l-1.6-1.6M17.5 6.5l1.6-1.6M4.9 19.1l1.6-1.6"/></svg>
-    </button>
   </div>
   <i class="readbar" id="readbar" aria-hidden="true"></i>
 </header>
@@ -4471,33 +4566,16 @@ nav.toc{padding-left:max(14px,env(safe-area-inset-left));}
     return node;
   }
 
-  /* ───────────────────────── 1 · THEME ───────────────────────── */
-  var themeButton = $('#themeToggle');
+  /* ───────────────────────── 1 · THEME ─────────────────────────
+     Light and dark are now two of the four named modes in the appearance
+     control below, so the old sun/moon toggle is gone. Only the resolver
+     stays — everything else keys off it. */
   function effectiveTheme() {
     var forced = document.documentElement.getAttribute('data-theme');
     if (forced) return forced;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-  var syncTint = function () {};   /* replaced once the skin switch is built */
-  function paintThemeButton() {
-    var dark = effectiveTheme() === 'dark';
-    themeButton.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
-    $('#themeIcon').innerHTML = dark
-      ? '<path d="M20.5 14.5A8.6 8.6 0 0 1 9.5 3.5a8.7 8.7 0 1 0 11 11z"/>'
-      : '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M6.5 6.5 4.9 4.9M19.1 19.1l-1.6-1.6M17.5 6.5l1.6-1.6M4.9 19.1l1.6-1.6"/>';
-  }
-  try {
-    var storedTheme = localStorage.getItem(THEME_KEY);
-    if (storedTheme) document.documentElement.setAttribute('data-theme', storedTheme);
-  } catch (e) {}
-  paintThemeButton();
-  themeButton.addEventListener('click', function () {
-    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
-    paintThemeButton();
-    syncTint();
-  });
+  var syncTint = function () {};   /* replaced once the mode switch is built */
 
   /* ───────────────── 1b · APPEARANCE ─────────────────
      Two skins over one set of markup: the Studio look the guide ships with,
@@ -4520,49 +4598,83 @@ nav.toc{padding-left:max(14px,env(safe-area-inset-left));}
     return false;
   }
 
-  function applySkin() {
-    var skin = skinChoice === 'auto' ? (isApplePlatform() ? 'apple' : 'studio') : skinChoice;
-    document.documentElement.setAttribute('data-skin', skin);
-    $$('.skin-switch button').forEach(function (button) {
-      button.setAttribute('aria-pressed', button.getAttribute('data-skin') === skinChoice ? 'true' : 'false');
+  /* mode -> { skin, theme|null }. A null theme means "follow the system",
+     which is what lets Liquid be luminous by day and cinematic at night
+     without a second control. */
+  var MODES = {
+    system: { skin: 'studio', theme: null, label: 'System', hint: 'Follow this device\u2019s light or dark setting' },
+    light:  { skin: 'studio', theme: 'light', label: 'Light', hint: 'Always light' },
+    dark:   { skin: 'studio', theme: 'dark',  label: 'Dark',  hint: 'Always dark' },
+    liquid: { skin: 'apple',  theme: null,    label: 'Liquid', hint: 'Apple Liquid Glass, following your device' }
+  };
+
+  function currentMode() {
+    var stored = null;
+    try { stored = localStorage.getItem(SKIN_KEY); } catch (e) {}
+    return MODES[stored] ? stored : 'system';
+  }
+
+  function applyMode(mode, remember) {
+    var def = MODES[mode] || MODES.system;
+    var root = document.documentElement;
+    root.setAttribute('data-skin', def.skin);
+    if (def.theme) root.setAttribute('data-theme', def.theme);
+    else root.removeAttribute('data-theme');
+    if (remember) { try { localStorage.setItem(SKIN_KEY, mode); } catch (e) {} }
+
+    $$('.skin-switch button').forEach(function (b) {
+      var on = b.getAttribute('data-mode') === mode;
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
     });
-    /* The address-bar tint should follow the appearance, not just the theme. */
+
     var meta = $('meta[name="theme-color"]');
     if (meta) {
       var dark = effectiveTheme() === 'dark';
       meta.setAttribute('content',
-        skin === 'apple' ? (dark ? '#000000' : '#F2F2F7') : (dark ? '#0C141A' : '#F7F5F1'));
+        def.skin === 'apple' ? (dark ? '#000000' : '#F2F2F7') : (dark ? '#0C141A' : '#F7F5F1'));
     }
   }
 
-  function buildSkinSwitch() {
-    var host = $('#themeToggle');
+  function buildModeSwitch() {
+    /* Mounted after the study controls rather than in place of a button it
+       then deletes — the control should not depend on an element it removes. */
+    var host = $('.command-group') || $('.topbar-inner');
     if (!host || $('.skin-switch')) return;
     var group = el('div', 'skin-switch');
     group.setAttribute('role', 'group');
     group.setAttribute('aria-label', 'Appearance');
-    [['auto', 'Auto', 'Match this device'],
-     ['apple', 'iOS', 'Apple appearance'],
-     ['studio', 'Web', 'Studio appearance']].forEach(function (option) {
-      var button = el('button', null, option[1]);
+    var order = ['system', 'light', 'dark', 'liquid'];
+    order.forEach(function (mode) {
+      var def = MODES[mode];
+      var button = el('button', null, def.label);
       button.type = 'button';
-      button.setAttribute('data-skin', option[0]);
-      button.title = option[2];
-      button.addEventListener('click', function () {
-        skinChoice = option[0];
-        try { localStorage.setItem(SKIN_KEY, skinChoice); } catch (e) {}
-        applySkin();
+      button.setAttribute('data-mode', mode);
+      button.title = def.hint;
+      button.addEventListener('click', function () { applyMode(mode, true); });
+      /* Arrow keys move through a segmented control; tab moves past it. */
+      button.addEventListener('keydown', function (event) {
+        var i = order.indexOf(mode), next = null;
+        if (event.key === 'ArrowRight') next = order[(i + 1) % order.length];
+        else if (event.key === 'ArrowLeft') next = order[(i - 1 + order.length) % order.length];
+        if (!next) return;
+        event.preventDefault();
+        applyMode(next, true);
+        $('.skin-switch button[data-mode="' + next + '"]').focus();
       });
       group.appendChild(button);
     });
-    host.parentNode.insertBefore(group, host);
+    /* The old sun/moon button is redundant once Light and Dark are named
+       options, and two controls for one setting is how the states drifted. */
+    host.parentNode.insertBefore(group, host.nextSibling);
   }
-  syncTint = applySkin;
-  buildSkinSwitch();
-  applySkin();
+
+  syncTint = function () { applyMode(currentMode(), false); };
+  buildModeSwitch();
+  applyMode(currentMode(), false);
   if (window.matchMedia) {
     var colorQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    if (colorQuery.addEventListener) colorQuery.addEventListener('change', applySkin);
+    if (colorQuery.addEventListener) colorQuery.addEventListener('change', function () { applyMode(currentMode(), false); });
   }
 
   /* ───────────────── 2 · MARKUP REPAIRS ─────────────────
