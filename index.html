@@ -23,6 +23,24 @@
 <meta property="og:title" content="Dental Implants &amp; Veneers — Complete Exam Guide">
 <meta property="og:description" content="Every implant and veneer topic from the training manual, rewritten in plain language, plus a self-marking question bank.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B6E76'/%3E%3Cpath d='M16 6c-3.2 0-4.6 1.3-6.2 1.3C8.4 7.3 7 8.9 7 11.4c0 3.6 1.3 5.6 2 8.4.7 2.9 1 6.2 2.8 6.2 1.7 0 1.6-3.4 4.2-3.4s2.5 3.4 4.2 3.4c1.8 0 2.1-3.3 2.8-6.2.7-2.8 2-4.8 2-8.4 0-2.5-1.4-4.1-2.8-4.1C20.6 7.3 19.2 6 16 6z' fill='%23fff'/%3E%3C/svg%3E">
+<script>
+/* Pre-paint bootstrap. The appearance logic lives at the foot of the
+   document with the rest of the script, which means first paint would
+   otherwise land flat and then swap to glass — the theme flash the design
+   spec forbids. Twelve lines here settle it before the stylesheet is even
+   parsed; the full controller re-applies the same attributes later, so this
+   is a head start rather than a second source of truth. */
+(function () {
+  var LEGACY = { liquid: 'system', auto: 'system', studio: 'classic', apple: 'system' };
+  var THEMES = { light: 'light', dark: 'dark' };
+  var mode = 'system';
+  try { mode = localStorage.getItem('dental-guide-skin') || 'system'; } catch (e) {}
+  if (LEGACY[mode]) mode = LEGACY[mode];
+  var root = document.documentElement;
+  root.setAttribute('data-skin', mode === 'classic' ? 'studio' : 'apple');
+  if (THEMES[mode]) root.setAttribute('data-theme', THEMES[mode]);
+})();
+</script>
 <style>
 /* ═══════════════════════════════════════════════════════════════════
    DESIGN TOKENS
@@ -608,11 +626,33 @@ ul.plain li,ol.plain li{margin-bottom:6px;}
   font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
 }
 .tablist{
+  position:relative;
   display:flex;gap:4px;flex-wrap:wrap;
   margin:10px 12px 0;padding:4px;
   background:var(--surface-2);border-radius:99px;
 }
+/* The active pill is one element that travels between tabs rather than a fill
+   that blinks out of one button and into another. It is injected by script,
+   and until it is the buttons carry their own fill — so the active state is
+   never waiting on JavaScript to exist. */
+.tablist .tab-pill{
+  position:absolute;left:0;top:0;width:0;height:0;
+  border-radius:99px;pointer-events:none;opacity:0;
+  background:var(--surface);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    0 1px 2px rgba(0,0,0,.10),
+    0 0 0 1px color-mix(in srgb,var(--teal) 34%,transparent);
+  transition:transform .34s cubic-bezier(.32,.72,0,1),
+             width .34s cubic-bezier(.32,.72,0,1),
+             height .2s ease, opacity .2s ease;
+}
+.tablist.has-pill button[aria-selected="true"]{background:transparent;box-shadow:none;}
+@media (prefers-reduced-motion:reduce){
+  .tablist .tab-pill{transition:opacity .2s ease;}
+}
 .tablist button{
+  position:relative;z-index:1;
   flex:1 1 0;min-width:0;
   padding:8px 14px;border:0;border-radius:99px;background:transparent;
   color:var(--muted);cursor:pointer;white-space:nowrap;
@@ -1345,7 +1385,26 @@ body.focus-mode main{padding-top:26px;}
 [data-skin="apple"] .toc-group-toggle:hover{background:var(--surface-2);}
 [data-skin="apple"] .toc-group-toggle:hover .toc-caret{background:transparent;color:var(--teal);transform:none;}
 [data-skin="apple"] .toc-count{background:var(--surface-3);border-radius:99px;}
-[data-skin="apple"] nav.toc a{border-radius:var(--r-sm);border-left:none;padding-left:11px;}
+/* Part colour at an alpha the glass survives, plus a rim so the group still
+   reads as a grouped surface rather than a wash. */
+[data-skin="apple"] .toc-group{
+  background:color-mix(in srgb, var(--pc-soft) 50%, transparent);
+  border:1px solid rgba(var(--lg-hi),.14);
+  box-shadow:inset 0 1px 0 rgba(var(--lg-hi),calc(var(--lg-rim) * .5));
+}
+[data-skin="apple"] .toc-group.has-current{
+  background:color-mix(in srgb, var(--pc-soft) 78%, transparent);
+  border-color:rgba(var(--lg-hi),.26);
+}
+[data-skin="apple"] .toc-count{background:rgba(var(--lg-hi),.22);}
+@supports not (background:color-mix(in srgb,red 50%,transparent)){
+  [data-skin="apple"] .toc-group{background:var(--pc-soft);}
+}
+/* No padding-left here. The sidebar rows carry an absolutely positioned
+   part dot at left:11px, and the row reserves 26px for it; resetting the
+   padding to 11px parked that dot on top of the first letter of every
+   link — which is what the glass appearance was showing. */
+[data-skin="apple"] nav.toc a{border-radius:var(--r-sm);border-left:none;}
 [data-skin="apple"] nav.toc a:hover{background:var(--surface-2);transform:none;}
 [data-skin="apple"] nav.toc a.on{background:var(--teal);color:var(--on-accent);font-weight:590;}
 [data-skin="apple"] .toc-group.has-current .toc-caret{border:none;}
@@ -1361,8 +1420,42 @@ body.focus-mode main{padding-top:26px;}
 }
 [data-skin="apple"] .tablist button:hover{background:transparent;}
 [data-skin="apple"] .tablist button[aria-selected="true"]{
-  background:var(--surface);color:var(--ink);font-weight:590;
+  background:var(--surface);color:var(--teal-ink);font-weight:640;
   box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04);
+}
+[data-skin="apple"] .tablist.has-pill button[aria-selected="true"]{
+  background:transparent;box-shadow:none;color:var(--teal-ink);font-weight:640;
+}
+[data-skin="apple"] .tablist button:hover:not([aria-selected="true"]){
+  background:rgba(var(--lg-hi),.10);
+}
+[data-skin="apple"] .tablist .tab-pill{
+  border-radius:7px;
+  background:var(--lg-sheen), rgba(var(--lg-hi),.20);
+  -webkit-backdrop-filter:blur(10px) saturate(160%);
+  backdrop-filter:blur(10px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--lg-hi),.42),
+    0 0 0 1px color-mix(in srgb,var(--teal) 58%,transparent),
+    0 4px 12px rgba(0,0,0,.18);
+}
+/* On light glass the pill and its track are both near-white, so the accent
+   ring is doing most of the work; give it a tinted fill to help. */
+:root[data-skin="apple"]:not([data-theme="dark"]) .tablist .tab-pill{
+  background:var(--lg-sheen), rgba(255,255,255,.72);
+}
+@media (prefers-color-scheme:dark){
+  :root[data-skin="apple"]:not([data-theme="light"]) .tablist .tab-pill{
+    background:var(--lg-sheen), rgba(var(--lg-hi),.20);
+  }
+}
+@media (prefers-reduced-transparency:reduce){
+  [data-skin="apple"] .tablist .tab-pill{
+    -webkit-backdrop-filter:none;backdrop-filter:none;background:var(--surface);
+  }
+}
+:root[data-force~="rt"][data-skin="apple"] .tablist .tab-pill{
+  -webkit-backdrop-filter:none;backdrop-filter:none;background:var(--surface);
 }
 [data-skin="apple"] .section-tools button{border:none;background:var(--surface-2);color:var(--teal);font-weight:590;}
 [data-skin="apple"] .section-tools button:hover{background:var(--surface-3);color:var(--teal);transform:none;box-shadow:none;}
@@ -1425,13 +1518,23 @@ body.focus-mode main{padding-top:26px;}
 
   /* Content glass. Lighter than the navigation scrim because the backdrop is
      known, and driven by the same accessibility flags. */
-  --lg-cont-base:.74;
+  --lg-cont-base:.64;
   --lg-cont-hc:.90;
   --lg-cont:calc(
       var(--a11y-rt) * 1
     + var(--not-rt) * ( var(--a11y-hc) * var(--lg-cont-hc)
                       + var(--not-hc)  * var(--lg-cont-base) ));
   --lg-cont-blur:calc(var(--not-rt) * 18px);
+  /* Level 1 surfaces take a lighter blur than the navigation scrim: enough
+     to read as a pane of glass, cheap enough to put on a hundred of them. */
+  --lg-surf-blur:calc(var(--not-rt) * 14px);
+  /* The sheen that turns a tint into a material — a short fall of light from
+     the top edge, layered over the scrim rather than added as a pseudo-element,
+     because half these components already own ::before. */
+  --lg-sheen:linear-gradient(180deg,
+      rgba(var(--lg-hi),.16) 0%,
+      rgba(var(--lg-hi),.05) 34%,
+      rgba(var(--lg-hi),0) 62%);
   --lg-shadow:0 10px 34px rgba(10,26,32,.16), 0 2px 6px rgba(10,26,32,.08);
 
   /* A static ambient field. Glass over flat grey reads as nothing — the
@@ -1452,10 +1555,10 @@ body.focus-mode main{padding-top:26px;}
     --lg-rim:calc(var(--not-rt) * var(--lg-rim-base));
       --lg-rim:calc(var(--not-rt) * var(--lg-rim-base));
   --lg-spec-base:.11;
-  --lg-cont-base:.66;
+  --lg-cont-base:.56;
   --lg-cont-hc:.86;   /* measured ceiling .115 with the ink below */
     --lg-spec-base:.11;
-    --lg-cont-base:.66;
+    --lg-cont-base:.56;
     --lg-cont-hc:.86;   /* measured ceiling .115 with the ink below */
     --lg-shadow:0 14px 40px rgba(0,0,0,.66), 0 2px 8px rgba(0,0,0,.5);
     --lg-aurora-1:rgba(22,206,226,calc(var(--not-rt) * var(--not-hc) * .34));
@@ -1469,6 +1572,8 @@ body.focus-mode main{padding-top:26px;}
   --lg-alpha-base:.58;   /* floor 53.5% for 4.5:1 + margin */
   --lg-alpha-hc:.68;     /* floor 65.1% for 7:1 */
   --lg-rim-base:.30;
+  --lg-cont-base:.56;
+  --lg-cont-hc:.86;
   --lg-shadow:0 14px 40px rgba(0,0,0,.66), 0 2px 8px rgba(0,0,0,.5);
   --lg-aurora-1:rgba(22,206,226,calc(var(--not-rt) * var(--not-hc) * .34));
   --lg-aurora-2:rgba(92,124,255,calc(var(--not-rt) * var(--not-hc) * .30));
@@ -1480,10 +1585,17 @@ body.focus-mode main{padding-top:26px;}
 [data-skin="apple"] body{
   background-color:var(--ground);
   background-image:
-    radial-gradient(1100px 720px at 10% -12%, var(--lg-aurora-1), transparent 62%),
-    radial-gradient(920px 640px at 94% 4%,   var(--lg-aurora-2), transparent 64%),
-    radial-gradient(1000px 820px at 46% 112%,var(--lg-aurora-3), transparent 62%),
-    radial-gradient(720px 520px at 78% 58%,  var(--lg-aurora-4), transparent 66%);
+    radial-gradient(1240px 820px at 8% -10%,  var(--lg-aurora-1), transparent 64%),
+    radial-gradient(1040px 720px at 96% 2%,   var(--lg-aurora-2), transparent 66%),
+    radial-gradient(1120px 900px at 44% 108%, var(--lg-aurora-3), transparent 64%),
+    radial-gradient(860px 640px at 76% 54%,   var(--lg-aurora-4), transparent 68%);
+  /* The Studio look paints a 16px dot grid, and background-size is not reset
+     by declaring a new background-image. Without this line every one of these
+     1000px glows was being squeezed into a single 16px tile in the top-left
+     corner — which is why the page had no ambient field at all, and therefore
+     nothing for the glass to refract. */
+  background-size:cover;
+  background-position:center;
   background-attachment:fixed;
   background-repeat:no-repeat;
 }
@@ -1614,17 +1726,94 @@ html.lg-lens [data-skin="apple"] .masthead-status::after{
 [data-skin="apple"] .block.is-closed .block-head,
 [data-skin="apple"] .formula-atlas,
 [data-skin="apple"] .quick-map-grid span{
-  background:rgba(var(--lg-scrim), var(--lg-cont));
+  background:var(--lg-sheen), rgba(var(--lg-scrim), var(--lg-cont));
   border:1px solid rgba(var(--lg-hi),.20);
+  /* Dispersion. Real glass splits light at an edge, so the top rim runs cool
+     and the bottom rim warm — the same pair the navigation chrome already
+     uses, at about a third of the strength because a content surface has far
+     more edge on screen than a toolbar does. Two hairlines, no extra layer. */
   box-shadow:
     inset 0 1px 0 rgba(var(--lg-hi),calc(var(--lg-rim) * .7)),
+    inset 0 1.5px 0 rgba(186,244,255,.12),
+    inset 0 -1px 0 rgba(var(--lg-hi),.05),
+    inset 0 -1.5px 0 rgba(255,206,170,.07),
     var(--lg-shadow);
+}
+
+/* Blur is the expensive half of the material, so it goes only where the
+   instance count is bounded. The panels below number in the tens across a
+   6000-line document and rarely more than two share a viewport, which is the
+   budget the spec sets. The hundred feature cards and the two hundred and
+   thirty-eight question rows deliberately keep tint, rim and sheen without a
+   filter of their own: they already sit on the ambient field, so they read as
+   glass, and they do not each open a compositing layer. */
+[data-skin="apple"] .tw,
+[data-skin="apple"] .atlas-diagram,
+[data-skin="apple"] .quick-map,
+[data-skin="apple"] .fdi-mastery,
+[data-skin="apple"] .memory-hook,
+[data-skin="apple"] .script,
+[data-skin="apple"] .layman,
+[data-skin="apple"] .formula-atlas,
+[data-skin="apple"] .block.is-closed .block-head{
+  -webkit-backdrop-filter:blur(var(--lg-surf-blur)) saturate(150%);
+  backdrop-filter:blur(var(--lg-surf-blur)) saturate(150%);
+}
+
+/* A card lifts on hover the way a physical pane would: the scrim gains a
+   little body, the rim brightens, the shadow lengthens. Fill and edge carry
+   it, so the cue survives reduced motion intact. */
+[data-skin="apple"] .card,
+[data-skin="apple"] details.q{
+  transition:background .22s cubic-bezier(.2,.8,.2,1),
+             border-color .22s ease,
+             box-shadow .22s ease,
+             transform .22s cubic-bezier(.2,.8,.2,1);
+}
+[data-skin="apple"] .card:hover,
+[data-skin="apple"] details.q:hover{
+  background:var(--lg-sheen), rgba(var(--lg-scrim), calc(var(--lg-cont) + .08));
+  border-color:rgba(var(--lg-hi),.34);
+  transform:translateY(-2px);
+}
+@media (prefers-reduced-motion:reduce){
+  [data-skin="apple"] .card,
+  [data-skin="apple"] details.q{transition:background .01ms,border-color .01ms;}
+  [data-skin="apple"] .card:hover,
+  [data-skin="apple"] details.q:hover{transform:none;}
+}
+
+/* Responsive intensity. A phone GPU pays the same price for a 26px blur as a
+   desktop one and has a fraction of the fill rate, so below the tablet
+   breakpoint the material keeps its tint and rim and gives up most of its
+   blur — and every Level 1 panel gives up its filter completely. */
+@media (max-width:900px){
+  :root[data-skin="apple"]{
+    --lg-blur-base:16px;
+    --lg-cont-blur:calc(var(--not-rt) * 12px);
+    --lg-surf-blur:0px;
+  }
+  [data-skin="apple"] .tw,
+  [data-skin="apple"] .atlas-diagram,
+  [data-skin="apple"] .quick-map,
+  [data-skin="apple"] .fdi-mastery,
+  [data-skin="apple"] .memory-hook,
+  [data-skin="apple"] .script,
+  [data-skin="apple"] .layman,
+  [data-skin="apple"] .formula-atlas,
+  [data-skin="apple"] .block.is-closed .block-head{
+    -webkit-backdrop-filter:none; backdrop-filter:none;
+  }
+  /* Hover is a pointer idiom; on a touch screen it only ever fires as a
+     sticky state left behind by a tap. */
+  [data-skin="apple"] .card:hover,
+  [data-skin="apple"] details.q:hover{transform:none;}
 }
 /* Level 2 — the one content-area component that keeps real blur, because a
    segmented control reads as a floating control rather than a page surface
    and there are only four of them in the whole document. */
 [data-skin="apple"] .tabset{
-  background:rgba(var(--lg-scrim), var(--lg-cont));
+  background:var(--lg-sheen), rgba(var(--lg-scrim), var(--lg-cont));
   -webkit-backdrop-filter:blur(var(--lg-cont-blur)) saturate(150%);
   backdrop-filter:blur(var(--lg-cont-blur)) saturate(150%);
   border:1px solid rgba(var(--lg-hi),.20);
@@ -1655,6 +1844,7 @@ html.lg-lens [data-skin="apple"] .masthead-status::after{
   [data-skin="apple"] .tw,
   [data-skin="apple"] .plate,
   [data-skin="apple"] .memory-hook,
+  [data-skin="apple"] .formula-atlas,
   [data-skin="apple"] .block.is-closed .block-head{
     -webkit-backdrop-filter:none; backdrop-filter:none;
     background:var(--surface); border-color:var(--line);
@@ -1671,6 +1861,7 @@ html.lg-lens [data-skin="apple"] .masthead-status::after{
 :root[data-force~="rt"][data-skin="apple"] .tw,
 :root[data-force~="rt"][data-skin="apple"] .plate,
 :root[data-force~="rt"][data-skin="apple"] .memory-hook,
+:root[data-force~="rt"][data-skin="apple"] .formula-atlas,
 :root[data-force~="rt"][data-skin="apple"] .block.is-closed .block-head{
   -webkit-backdrop-filter:none; backdrop-filter:none;
   background:var(--surface); border-color:var(--line);
@@ -2036,10 +2227,84 @@ nav.toc a.on{
 nav.toc a.on::before{opacity:1;background:var(--pc-on);transform:translateY(-50%) scale(1.25);}
 [data-skin="apple"] nav.toc a.on{color:var(--pc-on);}
 
+/* ═══════════════ LIQUID PRESS ═══════════════
+   A press should feel like putting a hand into water: the surface gives at
+   the point of contact, a ring spreads out from under the finger, and it
+   settles. Three things make it read as water rather than as a Material
+   ripple — the ring has a soft gradient edge instead of a hard disc, it
+   starts under the actual contact point rather than at the centre, and the
+   control itself dips slightly while the finger is down.
+
+   It is decoration on top of states that are already expressed in fill,
+   weight and aria — so reduced motion switches the whole thing off and
+   nothing is lost. */
+:root{ --rp:11,110,118; }          /* teal ring on light surfaces */
+:root[data-theme="dark"]{ --rp:255,255,255; }
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --rp:255,255,255; } }
+
+/* On a control that is already filled with the accent, a teal ring is a ring
+   you cannot see. Anything carrying an accent ground rings white instead. */
+nav.toc a.on,
+.masthead-status a.on,
+.btn.primary,
+.btn[aria-pressed="true"]{ --rp:255,255,255; }
+
+.ripple-host{ position:relative; overflow:hidden; }
+.liquid-ripple{
+  position:absolute;pointer-events:none;z-index:0;
+  left:var(--rp-x);top:var(--rp-y);
+  width:var(--rp-size);height:var(--rp-size);
+  margin-left:calc(var(--rp-size) / -2);
+  margin-top:calc(var(--rp-size) / -2);
+  border-radius:50%;
+  /* A ring with a bright leading edge and a hollow middle: a disc reads as a
+     stain, a ring reads as a wave leaving the point of contact. */
+  background:radial-gradient(circle,
+      rgba(var(--rp),.30) 0%,
+      rgba(var(--rp),.20) 30%,
+      rgba(var(--rp),.34) 52%,
+      rgba(var(--rp),.10) 68%,
+      rgba(var(--rp),0)   78%);
+  transform:scale(.08);opacity:1;
+  animation:liquid-ripple 640ms cubic-bezier(.22,.68,.24,1) forwards;
+}
+@keyframes liquid-ripple{
+  60%{ opacity:.55; }
+  to { transform:scale(1); opacity:0; }
+}
+/* The dip. Transform only, so it composites and never reflows the row. */
+.tablist button:active,
+.masthead-status a:active,
+nav.toc a:active,
+.toc-group-toggle:active,
+.choice:active{ transform:scale(.975); }
+.tablist button,
+.masthead-status a,
+nav.toc a,
+.toc-group-toggle,
+.choice{ transition:transform .16s cubic-bezier(.32,.72,0,1), background .18s ease, color .18s ease, box-shadow .18s ease; }
+@media (prefers-reduced-motion:reduce){
+  .liquid-ripple{ display:none; }
+  .tablist button:active,
+  .masthead-status a:active,
+  nav.toc a:active,
+  .toc-group-toggle:active,
+  .choice:active{ transform:none; }
+}
+/* Forced colours paint their own everything; a translucent ring there is
+   either invisible or an obstruction. */
+@media (forced-colors:active){ .liquid-ripple{ display:none; } }
+
 /* ═══════════════ MASTHEAD TABS ═══════════════
    Pressed tabs take their part's colour and a glass pill, so the row reads as
    a set of switches rather than a line of links. */
 .masthead-status{gap:6px;padding:6px;border-radius:99px;}
+/* The capsule is right for a single row of part links and wrong the moment
+   they wrap — a 99px radius on a 180px-tall block reads as a blob. Below the
+   width where the strip stops fitting on one line it takes a panel radius. */
+@media (max-width:900px){
+  .masthead-status{border-radius:var(--r-xl);}
+}
 .masthead-status a{
   --pc:var(--p0);
   gap:8px;padding:9px 15px;border-radius:99px;
@@ -2089,10 +2354,34 @@ nav.toc a.on::before{opacity:1;background:var(--pc-on);transform:translateY(-50%
     width:min(320px,86vw);height:calc(100dvh - var(--hdr));
     background:var(--surface);border-right:1px solid var(--line);
     box-shadow:var(--sh-3);
+    /* set again below for the glass appearance */
     transform:translateX(-102%);visibility:hidden;
     transition:transform .26s cubic-bezier(.4,0,.2,1),visibility .26s;
   }
   nav.toc.open{transform:none;visibility:visible;}
+  /* The drawer floats over live content rather than over the ambient field,
+     so it takes the navigation scrim — the contrast floor derived for exactly
+     this case — rather than the lighter content one. */
+  [data-skin="apple"] nav.toc{
+    background:rgba(var(--lg-scrim), calc(var(--lg-alpha) + .16));
+    -webkit-backdrop-filter:blur(var(--lg-blur)) saturate(var(--lg-sat));
+    backdrop-filter:blur(var(--lg-blur)) saturate(var(--lg-sat));
+    border-right:.5px solid rgba(var(--lg-hi),.18);
+    box-shadow:inset 0 1px 0 rgba(var(--lg-hi),var(--lg-rim)), var(--lg-shadow);
+  }
+  @media (prefers-reduced-transparency:reduce){
+    [data-skin="apple"] nav.toc{
+      -webkit-backdrop-filter:none; backdrop-filter:none;
+      background:var(--surface); border-right:1px solid var(--line);
+    }
+  }
+  :root[data-force~="rt"][data-skin="apple"] nav.toc{
+    -webkit-backdrop-filter:none; backdrop-filter:none;
+    background:var(--surface); border-right:1px solid var(--line);
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    [data-skin="apple"] nav.toc{background:var(--surface);}
+  }
   .nav-scrim{
     display:block;position:fixed;inset:var(--hdr) 0 0;z-index:75;
     background:rgba(9,17,23,.42);backdrop-filter:blur(2px);
@@ -4578,39 +4867,37 @@ nav.toc{padding-left:max(14px,env(safe-area-inset-left));}
   var syncTint = function () {};   /* replaced once the mode switch is built */
 
   /* ───────────────── 1b · APPEARANCE ─────────────────
-     Two skins over one set of markup: the Studio look the guide ships with,
-     and an Apple look that restyles it in iOS/macOS idiom. Auto is the
-     default and follows the platform, so a reader on a Mac or an iPhone sees
-     the Apple appearance without asking and a reader on Windows sees the
-     Studio one. The choice is remembered per reader. */
+     Liquid Glass is the appearance of this guide, not an option inside it.
+     The switch below chooses the *theme* — System, Light or Dark — and the
+     material comes along in all three, which is the only way the page reads
+     as one designed product rather than two. Platform sniffing used to gate
+     the material to Apple devices, which is precisely why a reader on
+     Windows saw a flat page, so it is gone. Classic remains as a deliberate
+     opt-out for anyone who wants flat opaque surfaces, and the accessibility
+     fallbacks (Reduce Transparency, Increase Contrast, forced colours) still
+     switch the material off without being asked. */
   var SKIN_KEY = 'dental-guide-skin';
   var skinChoice = 'auto';
   try { skinChoice = localStorage.getItem(SKIN_KEY) || 'auto'; } catch (e) {}
-
-  /* Platform sniffing is the point here — the question is literally "is this
-     an Apple device", and no feature query answers it. iPadOS reports itself
-     as a Mac, hence the touch-point check alongside. */
-  function isApplePlatform() {
-    var ua = navigator.userAgent || '';
-    var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
-    if (/iPhone|iPad|iPod/i.test(ua)) return true;
-    if (/Mac/i.test(platform) || /Macintosh/i.test(ua)) return true;
-    return false;
-  }
 
   /* mode -> { skin, theme|null }. A null theme means "follow the system",
      which is what lets Liquid be luminous by day and cinematic at night
      without a second control. */
   var MODES = {
-    system: { skin: 'studio', theme: null, label: 'System', hint: 'Follow this device\u2019s light or dark setting' },
-    light:  { skin: 'studio', theme: 'light', label: 'Light', hint: 'Always light' },
-    dark:   { skin: 'studio', theme: 'dark',  label: 'Dark',  hint: 'Always dark' },
-    liquid: { skin: 'apple',  theme: null,    label: 'Liquid', hint: 'Apple Liquid Glass, following your device' }
+    system:  { skin: 'apple',  theme: null,    label: 'System',  hint: 'Liquid Glass, following this device\u2019s light or dark setting' },
+    light:   { skin: 'apple',  theme: 'light', label: 'Light',   hint: 'Liquid Glass, always light' },
+    dark:    { skin: 'apple',  theme: 'dark',  label: 'Dark',    hint: 'Liquid Glass, always dark' },
+    classic: { skin: 'studio', theme: null,    label: 'Classic', hint: 'Flat opaque surfaces, no transparency' }
   };
+  /* Readers who picked the old Liquid option asked for glass, and that is
+     now what System gives them. Readers who picked System, Light or Dark
+     keep the theme they chose and gain the material. */
+  var LEGACY_MODES = { liquid: 'system', auto: 'system', studio: 'classic', apple: 'system' };
 
   function currentMode() {
     var stored = null;
     try { stored = localStorage.getItem(SKIN_KEY); } catch (e) {}
+    if (LEGACY_MODES[stored]) stored = LEGACY_MODES[stored];
     return MODES[stored] ? stored : 'system';
   }
 
@@ -4644,7 +4931,7 @@ nav.toc{padding-left:max(14px,env(safe-area-inset-left));}
     var group = el('div', 'skin-switch');
     group.setAttribute('role', 'group');
     group.setAttribute('aria-label', 'Appearance');
-    var order = ['system', 'light', 'dark', 'liquid'];
+    var order = ['system', 'light', 'dark', 'classic'];
     order.forEach(function (mode) {
       var def = MODES[mode];
       var button = el('button', null, def.label);
@@ -6596,6 +6883,97 @@ nav.toc{padding-left:max(14px,env(safe-area-inset-left));}
   }, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
   onScroll();
+
+  /* ───────────────── 9c · SEGMENTED CONTROL PILL ─────────────────
+     Material morphing for the tab strips: one pill that slides between
+     labels instead of a fill that disappears and reappears. It is driven off
+     aria-selected through an observer rather than wired into the tab code, so
+     it stays correct no matter which path changed the selection — click,
+     arrow key, or anything added later. The pill is decoration on top of a
+     state that is already expressed in aria-selected, label colour and font
+     weight, so losing it costs nothing. */
+  (function () {
+    var lists = $$('.tablist');
+    if (!lists.length || typeof MutationObserver !== 'function') return;
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    lists.forEach(function (list) {
+      var pill = el('span', 'tab-pill');
+      pill.setAttribute('aria-hidden', 'true');
+      list.insertBefore(pill, list.firstChild);
+      list.classList.add('has-pill');
+
+      function place(animate) {
+        var on = list.querySelector('button[aria-selected="true"]');
+        if (!on || !on.offsetWidth) { pill.style.opacity = '0'; return; }
+        /* offset* is measured against the list, which is the offset parent —
+           so a strip that has been scrolled sideways on a phone still lands
+           the pill on the right label. */
+        pill.style.transitionDuration = (animate && !reduceMotion.matches) ? '' : '0ms';
+        pill.style.opacity = '1';
+        pill.style.width  = on.offsetWidth + 'px';
+        pill.style.height = on.offsetHeight + 'px';
+        pill.style.transform = 'translate(' + on.offsetLeft + 'px,' + on.offsetTop + 'px)';
+      }
+
+      place(false);
+      new MutationObserver(function () { place(true); })
+        .observe(list, { subtree: true, attributes: true, attributeFilter: ['aria-selected'] });
+      if (typeof ResizeObserver === 'function') {
+        new ResizeObserver(function () { place(false); }).observe(list);
+      } else {
+        window.addEventListener('resize', function () { place(false); }, { passive: true });
+      }
+      list.addEventListener('scroll', function () { place(false); }, { passive: true });
+    });
+  })();
+
+  /* ───────────────── 9d · LIQUID PRESS ─────────────────
+     One delegated pointerdown for the whole document rather than a listener
+     per control — there are several hundred pressable things on this page and
+     they are built at different times, so binding individually would be both
+     expensive and incomplete. The ring is a single element that removes
+     itself when its animation ends. */
+  (function () {
+    /* .block-head is deliberately absent: it contains a focusable toggle, and
+       the host gets overflow:hidden, which would clip that button's focus
+       ring. The toggle itself is in the list instead. */
+    var PRESSABLE = '.tablist button, .btn, nav.toc a, .masthead-status a, .choice,' +
+                    ' .block-toggle, .toc-group-toggle, .section-tools button,' +
+                    ' .skin-switch button, .marks button, .to-top, .solution-toggle';
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    document.addEventListener('pointerdown', function (event) {
+      if (event.button && event.pointerType === 'mouse') return;   /* left button / touch / pen */
+      if (reduceMotion.matches) return;
+      var host = event.target.closest && event.target.closest(PRESSABLE);
+      if (!host) return;
+
+      var box = host.getBoundingClientRect();
+      if (!box.width || !box.height) return;
+      var x = event.clientX - box.left, y = event.clientY - box.top;
+      /* Reach the far corner from wherever the finger actually landed, so the
+         wave always clears the control instead of stopping short on a wide
+         one pressed near its edge. */
+      var size = 2 * Math.max(
+        Math.hypot(x, y), Math.hypot(box.width - x, y),
+        Math.hypot(x, box.height - y), Math.hypot(box.width - x, box.height - y));
+
+      /* One ring at a time per control: a rapid double-tap should look like
+         one surface being struck twice, not like two waves fighting. */
+      var previous = host.querySelector(':scope > .liquid-ripple');
+      if (previous) previous.remove();
+
+      var ring = el('span', 'liquid-ripple');
+      ring.setAttribute('aria-hidden', 'true');
+      ring.style.setProperty('--rp-x', x + 'px');
+      ring.style.setProperty('--rp-y', y + 'px');
+      ring.style.setProperty('--rp-size', size + 'px');
+      host.classList.add('ripple-host');
+      host.appendChild(ring);
+      ring.addEventListener('animationend', function () { ring.remove(); });
+    }, { passive: true });
+  })();
 
   /* ───────────────── 10 · GLASS MATERIAL ─────────────────
      Two things that separate a real material from a frosted panel: a
