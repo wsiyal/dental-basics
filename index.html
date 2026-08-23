@@ -6198,8 +6198,17 @@ nav.toc{padding-left:max(14px,env(safe-area-inset-left));}
   allQuestions = $$('details.q');
   allQuestions.forEach(function (q, index) {
     questionId(q, index + 1);
+    /* Strip a leading [manual] marker without flattening the stem. Assigning
+       textContent here rewrote the element wholesale, so every <strong> and
+       <em> an author put in a question was silently destroyed on load — and
+       the one that mattered most was the <em>not</em> in "which is not...".
+       Edit the first text node instead, and only when the marker is there. */
     var prompt = $('.qt', q);
-    if (prompt) prompt.textContent = prompt.textContent.replace(/^\[manual\]\s*/i, '');
+    if (prompt && /^\s*\[manual\]/i.test(prompt.textContent)) {
+      var walker = document.createTreeWalker(prompt, NodeFilter.SHOW_TEXT, null, false);
+      var firstText = walker.nextNode();
+      if (firstText) firstText.nodeValue = firstText.nodeValue.replace(/^\s*\[manual\]\s*/i, '');
+    }
 
     var tag = tagText(q);
     var authored = $('.opts', q);
